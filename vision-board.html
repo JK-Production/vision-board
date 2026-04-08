@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mit Vision Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Bebas+Neue&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0a0a;--surface:#111;--card:#161616;--border:#2a2a2a;
+  --gold:#c9a84c;--gold-light:#e8c96d;--text:#e8e0d5;--muted:#6b6460;--green:#5abf7a;
+  --strava:#fc4c02;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:0.35;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");}
+
+/* HEADER */
+header{padding:3rem 4rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;position:relative;}
+header::after{content:'';position:absolute;bottom:-1px;left:4rem;width:80px;height:2px;background:var(--gold);}
+.header-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,6vw,5.5rem);letter-spacing:0.08em;line-height:1;}
+.header-title span{color:var(--gold);}
+.header-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;color:var(--muted);margin-bottom:0.4rem;}
+.header-name{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:300;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-top:0.5rem;}
+.year-badge{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.2em;color:var(--gold);border:1px solid var(--gold);padding:0.3rem 1rem;opacity:0.8;}
+.add-btn{background:var(--gold);color:#000;border:none;padding:0.6rem 1.4rem;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.15em;cursor:pointer;transition:all 0.2s;margin-left:1rem;}
+.add-btn:hover{background:var(--gold-light);transform:translateY(-1px);}
+
+/* Editable header */
+.editable-text{cursor:pointer;position:relative;transition:opacity 0.15s;}
+.editable-text:hover{opacity:0.75;}
+.editable-text:hover::after{content:'✎';position:absolute;font-size:0.65rem;color:var(--gold);margin-left:0.4rem;opacity:0.7;font-family:'Inter',sans-serif;top:0;}
+.header-title.editable-text:hover::after{top:0.3rem;}
+.year-badge.editable-text:hover::after{display:none;}
+.inline-edit{background:transparent;border:none;border-bottom:1px solid var(--gold);color:inherit;font:inherit;letter-spacing:inherit;outline:none;width:100%;padding:0;margin:0;}
+.header-title .inline-edit{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,6vw,5.5rem);letter-spacing:0.08em;line-height:1;color:var(--text);}
+.year-badge .inline-edit{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.2em;color:var(--gold);background:transparent;width:5ch;text-align:center;}
+
+/* STATS */
+.stats-bar{display:flex;gap:3rem;padding:1.2rem 4rem;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.stat{display:flex;flex-direction:column;gap:0.2rem;}
+.stat-number{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--gold);line-height:1;}
+.stat-label{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);}
+
+/* STRAVA BAR */
+.strava-bar{display:flex;align-items:center;gap:1.5rem;padding:0.9rem 4rem;border-bottom:1px solid var(--border);background:#0d0d0d;flex-wrap:wrap;}
+.strava-logo{display:flex;align-items:center;gap:0.5rem;font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:0.15em;color:var(--strava);flex-shrink:0;}
+.strava-logo svg{width:18px;height:18px;fill:var(--strava);}
+.strava-stats{display:flex;gap:1.5rem;flex-wrap:wrap;}
+.strava-stat{display:flex;flex-direction:column;gap:0.1rem;}
+.strava-stat-val{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--text);line-height:1;}
+.strava-stat-lbl{font-size:0.6rem;letter-spacing:0.13em;text-transform:uppercase;color:var(--muted);}
+.strava-right{margin-left:auto;display:flex;align-items:center;gap:1rem;}
+.strava-sync-btn{background:transparent;border:1px solid #3a2010;color:var(--strava);padding:0.3rem 0.8rem;font-family:'Inter',sans-serif;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.strava-sync-btn:hover{background:#1a0a00;border-color:var(--strava);}
+.strava-sync-btn:disabled{opacity:0.4;cursor:default;}
+.strava-status{font-size:0.65rem;color:var(--muted);letter-spacing:0.08em;}
+.strava-notif{position:fixed;bottom:2rem;right:2rem;background:var(--strava);color:#000;padding:1rem 1.5rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.1em;z-index:9999;animation:fadeUp 0.4s ease;}
+
+/* Strava progress on cards */
+.strava-progress-wrap{margin-top:0.9rem;padding-top:0.8rem;border-top:1px solid #1e1e1e;}
+.strava-progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
+.strava-progress-lbl{display:flex;align-items:center;gap:0.4rem;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--strava);}
+.strava-progress-val{font-size:0.68rem;color:var(--muted);}
+.strava-bar-track{height:3px;background:#1e1e1e;border-radius:0;}
+.strava-bar-fill{height:3px;background:var(--strava);transition:width 1s ease;border-radius:0;}
+.strava-auto-badge{display:inline-block;background:var(--strava);color:#000;font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.12rem 0.35rem;margin-left:0.4rem;vertical-align:middle;font-family:'Inter',sans-serif;font-weight:700;}
+
+/* CATEGORIES BAR */
+.cat-bar{display:flex;gap:0.5rem;padding:1.2rem 4rem;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
+.cat-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:0.4rem 1.1rem;font-family:'Inter',sans-serif;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.cat-btn:hover,.cat-btn.active{border-color:var(--gold);color:var(--gold);}
+.cat-btn.achieved-tab{border-color:#1e3a28;color:#4a7a5a;}
+.cat-btn.achieved-tab:hover,.cat-btn.achieved-tab.active{border-color:var(--green);color:var(--green);}
+.manage-cats-btn{background:transparent;border:1px dashed #333;color:#444;padding:0.4rem 0.9rem;font-family:'Inter',sans-serif;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;margin-left:0.3rem;}
+.manage-cats-btn:hover{border-color:var(--muted);color:var(--muted);}
+
+/* ALL-VIEW columns */
+.board-all{padding:2rem 4rem 3rem;overflow-x:auto;}
+.board-all-inner{display:flex;gap:1.5rem;align-items:flex-start;min-width:min-content;}
+.board-col{flex:0 0 260px;width:260px;display:flex;flex-direction:column;}
+.board-col-header{padding:0 0 0.8rem 0;margin-bottom:1rem;border-bottom:1px solid var(--border);position:relative;}
+.board-col-header::after{content:'';position:absolute;bottom:-1px;left:0;width:32px;height:2px;background:var(--gold);}
+.board-col-title{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:0.15em;color:var(--text);}
+.board-col-count{font-size:0.65rem;letter-spacing:0.12em;color:var(--muted);margin-top:0.2rem;text-transform:uppercase;}
+.board-col .card{margin-bottom:1.2rem;width:100%;}
+.board-col-empty{font-size:0.72rem;color:#252525;letter-spacing:0.1em;text-transform:uppercase;padding:1.5rem;text-align:center;border:1px dashed #1a1a1a;}
+
+/* GRID */
+.board-grid{padding:3rem 4rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;align-items:start;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);position:relative;overflow:hidden;transition:transform 0.3s,border-color 0.3s;animation:fadeUp 0.4s ease both;}
+.card:hover{transform:translateY(-4px);border-color:#3a3a3a;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.card-image{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;filter:brightness(0.85) contrast(1.05);transition:filter 0.3s;}
+.card:hover .card-image{filter:brightness(0.95);}
+.card-image-placeholder{width:100%;aspect-ratio:4/3;background:linear-gradient(135deg,#1a1a1a,#222,#1a1a1a);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.5rem;color:var(--muted);font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;position:relative;overflow:hidden;}
+.card-image-placeholder::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,0.01) 10px,rgba(255,255,255,0.01) 20px);}
+.plus-icon{font-size:2rem;color:var(--border);}
+.card-body{padding:1.2rem 1.4rem 1.4rem;}
+.card-category{font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem;}
+.card-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;line-height:1.3;color:var(--text);margin-bottom:0.5rem;}
+.card-desc{font-size:0.8rem;color:var(--muted);line-height:1.6;font-weight:300;}
+.card-size-small .card-image{aspect-ratio:16/9;}.card-size-small .card-body{padding:0.9rem 1.1rem 1.1rem;}.card-size-small .card-title{font-size:1.1rem;}
+.card-size-large .card-title{font-size:1.6rem;}
+.accent-red .card-category{color:#c0504d;}.accent-red .card-image,.accent-red .card-image-placeholder{border-top:2px solid #c0504d;}
+.accent-blue .card-category{color:#4d7fc0;}.accent-blue .card-image,.accent-blue .card-image-placeholder{border-top:2px solid #4d7fc0;}
+.accent-green .card-category{color:var(--green);}.accent-green .card-image,.accent-green .card-image-placeholder{border-top:2px solid var(--green);}
+.card.quote-card{background:linear-gradient(135deg,#1a1510,#161616);border-color:#2a2318;}
+.card.quote-card .card-body{padding:2rem 1.8rem;}
+.quote-mark{font-family:'Cormorant Garamond',serif;font-size:5rem;color:var(--gold);opacity:0.3;line-height:0.5;margin-bottom:1rem;}
+.card.quote-card .card-title{font-style:italic;font-weight:300;font-size:1.35rem;line-height:1.5;}
+.quote-author{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);opacity:0.7;margin-top:1rem;}
+.card.goal-card .card-body{padding:1.5rem 1.6rem;}
+.goal-number{font-family:'Bebas Neue',sans-serif;font-size:4rem;color:var(--border);line-height:1;margin-bottom:0.5rem;transition:color 0.3s;}
+.card.goal-card:hover .goal-number{color:#333;}
+.goal-check{display:flex;align-items:center;gap:0.6rem;margin-top:1rem;}
+.goal-checkbox{width:16px;height:16px;border:1px solid var(--border);background:transparent;cursor:pointer;appearance:none;transition:all 0.2s;position:relative;flex-shrink:0;}
+.goal-checkbox:checked{background:var(--gold);border-color:var(--gold);}
+.goal-checkbox:checked::after{content:'✓';position:absolute;top:-1px;left:2px;font-size:11px;color:#000;}
+.goal-label{font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;}
+.card-actions{position:absolute;top:0.6rem;right:0.6rem;display:flex;gap:0.3rem;opacity:0;transition:opacity 0.2s;z-index:10;}
+.card:hover .card-actions{opacity:1;}
+.cta{background:rgba(0,0,0,0.78);border:1px solid var(--border);color:var(--muted);width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;cursor:pointer;transition:all 0.2s;}
+.cta:hover{background:#222;color:var(--text);border-color:#555;}
+.cta.edit:hover{background:var(--gold);color:#000;border-color:var(--gold);}
+.cta.del:hover{background:#c0392b;color:#fff;border-color:#c0392b;}
+.achieved-stamp{position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.75);border:1px solid var(--green);color:var(--green);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.25rem 0.6rem;}
+.achieved-date{font-size:0.68rem;color:#4a8a5a;margin-top:0.5rem;letter-spacing:0.08em;}
+.achieved-page{padding:3rem 4rem;}
+.achieved-header{margin-bottom:2rem;}
+.achieved-header h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.1em;color:var(--green);}
+.achieved-header p{font-size:0.8rem;color:var(--muted);margin-top:0.3rem;}
+.achieved-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.5rem;}
+.empty-wrap{padding:3rem 4rem;}
+.empty-board{text-align:center;padding:5rem 2rem;color:var(--muted);border:1px dashed var(--border);}
+.empty-board h3{font-family:'Cormorant Garamond',serif;font-size:1.8rem;opacity:0.3;margin-bottom:0.5rem;}
+.empty-board p{font-size:0.85rem;opacity:0.5;}
+
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);width:90%;max-width:540px;padding:2.5rem;position:relative;animation:fadeUp 0.3s ease;max-height:92vh;overflow-y:auto;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:1.5rem;}
+.modal label{display:block;font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;margin-top:1.2rem;}
+.modal input,.modal select,.modal textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.7rem 0.9rem;font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;transition:border-color 0.2s;}
+.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--gold);}
+.modal textarea{resize:vertical;min-height:80px;}
+.modal select option{background:var(--bg);}
+.tog-row{display:flex;gap:0.5rem;margin-top:0.4rem;flex-wrap:wrap;}
+.tog{flex:1;min-width:fit-content;background:var(--bg);border:1px solid var(--border);color:var(--muted);padding:0.5rem 0.8rem;font-family:'Inter',sans-serif;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.tog.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08);}
+.accent-row{display:flex;align-items:center;gap:0.7rem;margin-top:0.5rem;flex-wrap:wrap;}
+.adot{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:all 0.2s;flex-shrink:0;}
+.adot.sel{border-color:var(--text);transform:scale(1.25);}
+.img-drop{border:1px dashed var(--border);padding:1.5rem;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-top:0.4rem;}
+.img-drop:hover{border-color:var(--gold);}
+.img-drop p{font-size:0.75rem;color:var(--muted);margin-top:0.3rem;}
+#imgPreview{max-width:100%;max-height:150px;object-fit:cover;display:none;margin:0 auto;}
+.modal-actions{display:flex;gap:0.8rem;margin-top:2rem;}
+.btn-p{flex:1;background:var(--gold);color:#000;border:none;padding:0.8rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.12em;cursor:pointer;transition:all 0.2s;}
+.btn-p:hover{background:var(--gold-light);}
+.btn-s{background:transparent;border:1px solid var(--border);color:var(--muted);padding:0.8rem 1.4rem;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.12em;cursor:pointer;transition:all 0.2s;}
+.btn-s:hover{border-color:var(--muted);}
+.modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;}
+.modal-close:hover{color:var(--text);}
+.rm-img{background:transparent;border:1px solid var(--border);color:var(--muted);padding:0.25rem 0.7rem;font-size:0.7rem;cursor:pointer;margin-top:0.5rem;display:none;}
+.rm-img:hover{border-color:#c0392b;color:#c0392b;}
+
+/* CATEGORY MANAGER */
+.cat-list{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.5rem;}
+.cat-row{display:flex;align-items:center;gap:0.5rem;background:var(--bg);border:1px solid var(--border);padding:0.5rem 0.7rem;transition:border-color 0.2s;}
+.cat-row:focus-within{border-color:var(--gold);}
+.cat-row-input{flex:1;background:transparent;border:none;color:var(--text);font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;padding:0.2rem;}
+.cat-row-del{background:transparent;border:none;color:#333;font-size:0.85rem;cursor:pointer;padding:0.2rem 0.4rem;transition:color 0.2s;flex-shrink:0;}
+.cat-row-del:hover{color:#c0392b;}
+.add-cat-row{display:flex;gap:0.5rem;margin-bottom:0.5rem;}
+.add-cat-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.6rem 0.8rem;font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;transition:border-color 0.2s;}
+.add-cat-input:focus{border-color:var(--gold);}
+.add-cat-btn{background:var(--gold);color:#000;border:none;padding:0.6rem 1.1rem;font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:0.1em;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.add-cat-btn:hover{background:var(--gold-light);}
+.cat-manager-sub{font-size:0.75rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.5;}
+.cat-warn{font-size:0.7rem;color:#c0504d;margin-top:0.3rem;display:none;}
+
+/* Strava hint in modal */
+.strava-hint{font-size:0.7rem;color:#6b3a20;background:#110800;border:1px solid #2a1500;padding:0.6rem 0.8rem;margin-top:0.6rem;line-height:1.5;}
+.strava-hint strong{color:var(--strava);}
+
+@media(max-width:768px){
+  header,.cat-bar,.stats-bar,.strava-bar,.board-grid,.achieved-page,.empty-wrap,.board-all{padding-left:1.5rem;padding-right:1.5rem;}
+  header{flex-direction:column;align-items:flex-start;gap:1rem;}
+  .board-col{flex:0 0 220px;width:220px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="header-sub editable-text" id="hSub" onclick="startEdit('hSub')" title="Klik for at redigere">Dit personlige</div>
+    <div class="header-title editable-text" id="hTitle" onclick="startEdit('hTitle')" title="Klik for at redigere">Vision <span>Board</span></div>
+    <div class="header-name editable-text" id="hName" onclick="startEdit('hName')" title="Klik for at redigere">Matti Byrgesen Hansen</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+    <div class="year-badge editable-text" id="hYear" onclick="startEdit('hYear')" title="Klik for at redigere">2026</div>
+    <button class="add-btn" onclick="openModal()">+ Tilføj kort</button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-number" id="totalCount">0</div><div class="stat-label">Drømme & mål</div></div>
+  <div class="stat"><div class="stat-number" id="goalCount">0</div><div class="stat-label">Mål i alt</div></div>
+  <div class="stat"><div class="stat-number" id="checkedCount">0</div><div class="stat-label">Opnået</div></div>
+</div>
+
+<!-- STRAVA BAR -->
+<div class="strava-bar" id="stravaBar" style="display:none">
+  <div class="strava-logo">
+    <svg viewBox="0 0 24 24"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+    Strava
+  </div>
+  <div class="strava-stats" id="stravaStats">
+    <div class="strava-status" id="stravaStatus">Forbinder…</div>
+  </div>
+  <div class="strava-right">
+    <span class="strava-status" id="stravaSyncTime"></span>
+    <button class="strava-sync-btn" id="stravaSyncBtn" onclick="stravaSync()">↻ Synk</button>
+  </div>
+</div>
+
+<div class="cat-bar" id="catBar"></div>
+<div id="boardContainer"></div>
+
+<!-- CARD MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modalTitle">Nyt Vision Kort</div>
+    <label>Korttype</label>
+    <div class="tog-row" id="typeRow">
+      <button class="tog active" onclick="setType('drøm',this)">🌟 Drøm</button>
+      <button class="tog" onclick="setType('citat',this)">💬 Citat</button>
+      <button class="tog" onclick="setType('mål',this)">🎯 Mål</button>
+    </div>
+    <label>Kategori</label>
+    <select id="cardCat"></select>
+    <label id="titleLabel">Titel / Drøm</label>
+    <input type="text" id="cardTitle" placeholder="F.eks. Start mit eget firma…">
+    <div id="stravaHint" class="strava-hint" style="display:none">
+      <strong>🟠 Strava-tip:</strong> Skriv et tal + enhed i titlen for automatisk tracking.<br>
+      Eksempler: <em>"Løb 21 km"</em> · <em>"Cykel 100 km"</em> · <em>"Løb 5 gange"</em> · <em>"500 højdemeter"</em>
+    </div>
+    <label id="descLabel">Beskrivelse (valgfrit)</label>
+    <textarea id="cardDesc" placeholder="Beskriv din drøm eller dit mål…"></textarea>
+    <div id="imgSection">
+      <label>Billede (valgfrit)</label>
+      <div class="img-drop" onclick="document.getElementById('imgInput').click()">
+        <img id="imgPreview" alt="Preview">
+        <div id="imgPlaceholder"><div style="font-size:1.8rem;color:#2a2a2a;">📷</div><p>Klik for at uploade et billede</p></div>
+      </div>
+      <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="previewImg(this)">
+      <button class="rm-img" id="removeImgBtn" onclick="removeImg()">✕ Fjern billede</button>
+    </div>
+    <label>Kortstørrelse</label>
+    <div class="tog-row" id="sizeRow">
+      <button class="tog" onclick="setSize('small',this)">Lille</button>
+      <button class="tog active" onclick="setSize('medium',this)">Medium</button>
+      <button class="tog" onclick="setSize('large',this)">Stor</button>
+    </div>
+    <label>Accentfarve</label>
+    <div class="accent-row">
+      <div class="adot sel" style="background:#c9a84c" data-accent="gold" onclick="setAccent(this)"></div>
+      <div class="adot" style="background:#c0504d" data-accent="red" onclick="setAccent(this)"></div>
+      <div class="adot" style="background:#4d7fc0" data-accent="blue" onclick="setAccent(this)"></div>
+      <div class="adot" style="background:#5abf7a" data-accent="green" onclick="setAccent(this)"></div>
+      <div class="adot" style="background:#444" data-accent="none" onclick="setAccent(this)"></div>
+      <span style="font-size:0.7rem;color:var(--muted);">Guld · Rød · Blå · Grøn · Ingen</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-s" onclick="closeModal()">Annuller</button>
+      <button class="btn-p" id="saveBtn" onclick="saveCard()">Tilføj til board</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY MANAGER MODAL -->
+<div class="modal-overlay" id="catManagerModal">
+  <div class="modal" style="max-width:460px">
+    <button class="modal-close" onclick="closeCatManager()">✕</button>
+    <div class="modal-title">Kategorier</div>
+    <div class="cat-manager-sub">Omdøb eller slet kategorier, eller tilføj nye. Kort tilknyttet en slettet kategori beholder kategorinavnet som tekst.</div>
+    <div class="cat-list" id="catList"></div>
+    <div class="add-cat-row">
+      <input class="add-cat-input" id="newCatInput" placeholder="Ny kategori…" onkeydown="if(event.key==='Enter')addCat()">
+      <button class="add-cat-btn" onclick="addCat()">+ Tilføj</button>
+    </div>
+    <div class="cat-warn" id="catWarn">Navn må ikke være tomt</div>
+    <div class="modal-actions" style="margin-top:1.5rem">
+      <button class="btn-s" onclick="closeCatManager()">Annuller</button>
+      <button class="btn-p" onclick="saveCats()">Gem kategorier</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STRAVA CONFIG — dine nøgler
+// ═══════════════════════════════════════════
+const STRAVA_CLIENT_ID     = '222051';
+const STRAVA_CLIENT_SECRET = '88ac8b0a0de231085f284ae0c03c8704e85de688';
+const STRAVA_REFRESH_TOKEN = '7facdc7f86b4383f82a8c565907cb751d2121d4b';
+const STRAVA_INITIAL_ACCESS_TOKEN = 'ef194bead0fe5fb3ec4fa2acaf8b514d3cd51c7a';
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let cards      = [];
+let categories = [];
+let currentFilter = 'alle';
+let editingId  = null;
+let mType='drøm', mSize='medium', mAccent='gold', mImg=null;
+let catDraft   = [];
+let stravaToken  = null;   // live access token (refreshed automatically)
+let stravaTotals = null;   // aggregated stats used for goal matching
+
+const DEFAULT_CATS = [
+  {id:'karriere', label:'Karriere & Succes'},
+  {id:'rejser',   label:'Rejser & Oplevelser'},
+  {id:'sundhed',  label:'Sundhed & Fitness'},
+  {id:'vaekst',   label:'Personlig Vækst'},
+  {id:'oekonomi', label:'Økonomi & Frihed'},
+];
+
+// ═══════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════
+function save() {
+  try {
+    localStorage.setItem('vb_cards', JSON.stringify(cards));
+    localStorage.setItem('vb_cats',  JSON.stringify(categories));
+  } catch(e){}
+}
+function load() {
+  try {
+    const c = localStorage.getItem('vb_cards');
+    const k = localStorage.getItem('vb_cats');
+    if (c) cards      = JSON.parse(c);
+    if (k) categories = JSON.parse(k);
+  } catch(e){ cards=[]; categories=[]; }
+}
+
+// ═══════════════════════════════════════════
+// STRAVA — permanent token refresh
+// ═══════════════════════════════════════════
+async function stravaRefreshToken() {
+  // 1) Valid cached token?
+  try {
+    const cached = JSON.parse(localStorage.getItem('vb_strava_token') || '{}');
+    if (cached.access_token && cached.expires_at && (cached.expires_at - Date.now()/1000) > 300) {
+      stravaToken = cached.access_token;
+      return true;
+    }
+  } catch(e){}
+
+  // 2) Try OAuth token refresh (works when served via http://, blocked from file://)
+  try {
+    const res = await fetch('https://www.strava.com/oauth/token', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        client_id:     STRAVA_CLIENT_ID,
+        client_secret: STRAVA_CLIENT_SECRET,
+        refresh_token: STRAVA_REFRESH_TOKEN,
+        grant_type:    'refresh_token'
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      stravaToken = data.access_token;
+      localStorage.setItem('vb_strava_token', JSON.stringify({
+        access_token:  data.access_token,
+        expires_at:    data.expires_at,
+        refresh_token: data.refresh_token || STRAVA_REFRESH_TOKEN
+      }));
+      return true;
+    }
+  } catch(e) { /* CORS block from file:// — expected */ }
+
+  // 3) Use any stored token even if technically expired (Strava API will tell us)
+  try {
+    const cached = JSON.parse(localStorage.getItem('vb_strava_token') || '{}');
+    if (cached.access_token) { stravaToken = cached.access_token; return true; }
+  } catch(e){}
+
+  // 4) Fall back to the initial access token baked in
+  stravaToken = STRAVA_INITIAL_ACCESS_TOKEN;
+  return true;
+}
+
+async function stravaSync() {
+  const btn = document.getElementById('stravaSyncBtn');
+  btn.disabled = true; btn.textContent = '↻ Henter…';
+  document.getElementById('stravaStatus').textContent = 'Forbinder til Strava…';
+
+  const ok = await stravaRefreshToken();
+  if (!ok) {
+    document.getElementById('stravaStatus').textContent = '⚠ Kunne ikke forbinde til Strava';
+    btn.disabled = false; btn.textContent = '↻ Synk';
+    return;
+  }
+
+  try {
+    // Fetch athlete + last 100 activities (covers plenty of history)
+    const [athRes, actRes] = await Promise.all([
+      fetch('https://www.strava.com/api/v3/athlete', {
+        headers: {'Authorization': `Bearer ${stravaToken}`}
+      }),
+      fetch('https://www.strava.com/api/v3/athlete/activities?per_page=100', {
+        headers: {'Authorization': `Bearer ${stravaToken}`}
+      })
+    ]);
+
+    const athlete    = athRes.ok  ? await athRes.json()  : {};
+    const activities = actRes.ok  ? await actRes.json()  : [];
+
+    // ── Aggregate all-time AND last-7-days stats ──
+    const allTime = { run_km:0, ride_km:0, run_count:0, ride_count:0, elevation:0, time_sec:0 };
+    const week    = { run_km:0, ride_km:0, run_count:0, ride_count:0, elevation:0, time_sec:0 };
+    const cutoff  = Date.now() - 7 * 86400000;
+
+    for (const a of activities) {
+      const isRun  = a.sport_type === 'Run'  || a.type === 'Run';
+      const isRide = a.sport_type === 'Ride' || a.type === 'Ride';
+      const km     = (a.distance || 0) / 1000;
+      const elev   = a.total_elevation_gain || 0;
+      const t      = a.moving_time || 0;
+      const inWeek = new Date(a.start_date).getTime() >= cutoff;
+
+      if (isRun)  { allTime.run_km  += km; allTime.run_count++;  if(inWeek){week.run_km  += km; week.run_count++;} }
+      if (isRide) { allTime.ride_km += km; allTime.ride_count++; if(inWeek){week.ride_km += km; week.ride_count++;} }
+      allTime.elevation += elev; allTime.time_sec += t;
+      if (inWeek) { week.elevation += elev; week.time_sec += t; }
+    }
+
+    stravaTotals = { allTime, week, athlete };
+    try { localStorage.setItem('vb_strava_data', JSON.stringify({stravaTotals, syncedAt: Date.now()})); } catch(e){}
+
+    renderStravaBar(athlete, week);
+    checkStravaGoals(allTime, week);
+    render();
+
+    const now = new Date().toLocaleTimeString('da-DK',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('stravaSyncTime').textContent = `Synkroniseret ${now}`;
+    document.getElementById('stravaStatus').textContent = '';
+    document.getElementById('stravaSyncBtn').textContent = '↻ Synk';
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('stravaStatus').textContent = '⚠ Fejl ved hentning af aktiviteter';
+  }
+
+  btn.disabled = false; btn.textContent = '↻ Synk';
+}
+
+function renderStravaBar(athlete, week) {
+  const name   = athlete?.firstname || '';
+  const runKm  = week.run_km.toFixed(1);
+  const rideKm = week.ride_km.toFixed(1);
+  const h      = Math.floor(week.time_sec / 3600);
+  const m      = Math.floor((week.time_sec % 3600) / 60);
+  const elev   = Math.round(week.elevation);
+  const acts   = week.run_count + week.ride_count;
+
+  document.getElementById('stravaStats').innerHTML = `
+    ${name ? `<div class="strava-stat"><div class="strava-stat-val">${name}</div><div class="strava-stat-lbl">Atlet</div></div>` : ''}
+    <div class="strava-stat"><div class="strava-stat-val">${runKm} km</div><div class="strava-stat-lbl">Løb (7 dage)</div></div>
+    <div class="strava-stat"><div class="strava-stat-val">${rideKm} km</div><div class="strava-stat-lbl">Cykling (7 dage)</div></div>
+    <div class="strava-stat"><div class="strava-stat-val">${h}t ${m}m</div><div class="strava-stat-lbl">Aktiv tid</div></div>
+    <div class="strava-stat"><div class="strava-stat-val">${elev} m</div><div class="strava-stat-lbl">Højdemeter</div></div>
+    <div class="strava-stat"><div class="strava-stat-val">${acts}</div><div class="strava-stat-lbl">Aktiviteter</div></div>
+  `;
+}
+
+// ── Goal matching ──
+// Parses a card title like "Løb 21 km" → {value, unit, type}
+function parseGoalTarget(text) {
+  const t = text.toLowerCase();
+  const m = t.match(/(\d+[\.,]?\d*)/);
+  if (!m) return null;
+  const value = parseFloat(m[1].replace(',', '.'));
+
+  if ((t.includes('løb') || t.includes('run') || t.includes('løbe')) && t.includes('km'))
+    return {value, unit:'km', type:'run_km'};
+  if ((t.includes('cykel') || t.includes('ride') || t.includes('cycle')) && t.includes('km'))
+    return {value, unit:'km', type:'ride_km'};
+  if (t.includes('km'))
+    return {value, unit:'km', type:'any_km'};
+  if (t.includes('højdemeter') || t.includes('elevation'))
+    return {value, unit:'m', type:'elevation'};
+  if (t.includes('gange') || t.includes('aktivitet') || t.includes('træning'))
+    return {value, unit:'×', type:'count'};
+  if (t.includes('time') || t.includes('timer'))
+    return {value, unit:'h', type:'time_h'};
+  return null;
+}
+
+function getProgress(card, totals) {
+  if (!totals || card.type !== 'mål') return null;
+  const target = parseGoalTarget(card.title + ' ' + (card.desc||''));
+  if (!target) return null;
+
+  // Use allTime totals for goal completion, week for display
+  const at = totals.allTime;
+  let current = 0;
+  switch(target.type) {
+    case 'run_km':    current = Math.round(at.run_km  * 10)/10; break;
+    case 'ride_km':   current = Math.round(at.ride_km * 10)/10; break;
+    case 'any_km':    current = Math.round((at.run_km + at.ride_km) * 10)/10; break;
+    case 'elevation': current = Math.round(at.elevation); break;
+    case 'count':     current = at.run_count + at.ride_count; break;
+    case 'time_h':    current = Math.round(at.time_sec/3600 * 10)/10; break;
+    default: return null;
+  }
+  const pct = Math.min(100, Math.round((current / target.value) * 100));
+  return {current, target: target.value, unit: target.unit, pct};
+}
+
+function checkStravaGoals(allTime, week) {
+  const combined = {allTime, week};
+  let anyNew = false;
+  cards.forEach(c => {
+    if (c.checked || c.type !== 'mål') return;
+    const p = getProgress(c, combined);
+    if (p && p.pct >= 100) {
+      c.checked      = true;
+      c.achievedDate = new Date().toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'});
+      c.stravaAuto   = true;
+      anyNew         = true;
+    }
+  });
+  if (anyNew) { save(); showNotif('✦ Strava mål opnået! Tjek din Opnået-side.'); }
+}
+
+function showNotif(msg) {
+  const el = document.createElement('div');
+  el.className = 'strava-notif';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.style.opacity='0', 3500);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function loadStravaCache() {
+  try {
+    const s = JSON.parse(localStorage.getItem('vb_strava_data') || '{}');
+    if (s.stravaTotals) {
+      stravaTotals = s.stravaTotals;
+      renderStravaBar(s.stravaTotals.athlete || {}, s.stravaTotals.week);
+      const age = Math.round((Date.now() - s.syncedAt) / 60000);
+      document.getElementById('stravaSyncTime').textContent = age < 2 ? `Synkroniseret lige nu` : `Sidst synkroniseret ${age} min siden`;
+    }
+  } catch(e){}
+  stravaSync(); // always refresh on load
+}
+
+// ═══════════════════════════════════════════
+// HEADER EDITING
+// ═══════════════════════════════════════════
+const HDR_DEFAULTS = {hSub:'Dit personlige', hTitle:'Vision Board', hName:'Matti Byrgesen Hansen', hYear: String(new Date().getFullYear())};
+
+function loadHeader() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('vb_header') || '{}');
+    Object.keys(HDR_DEFAULTS).forEach(id => renderHdrField(id, saved[id] || HDR_DEFAULTS[id]));
+  } catch(e) {
+    Object.keys(HDR_DEFAULTS).forEach(id => renderHdrField(id, HDR_DEFAULTS[id]));
+  }
+}
+function saveHeader() {
+  const d = {};
+  Object.keys(HDR_DEFAULTS).forEach(id => { d[id] = document.getElementById(id)?.innerText?.trim() || HDR_DEFAULTS[id]; });
+  try { localStorage.setItem('vb_header', JSON.stringify(d)); } catch(e){}
+}
+function renderHdrField(id, val) {
+  const el = document.getElementById(id); if (!el) return;
+  if (id === 'hTitle') {
+    const parts = val.trim().split(/\s+/);
+    el.innerHTML = parts.length >= 2 ? parts.slice(0,-1).join(' ') + ' <span>' + parts[parts.length-1] + '</span>' : `<span>${val}</span>`;
+  } else { el.textContent = val; }
+}
+function startEdit(id) {
+  const el = document.getElementById(id); if (!el || el.querySelector('input')) return;
+  const cur = el.innerText.trim();
+  const inp = document.createElement('input');
+  inp.className = 'inline-edit'; inp.value = cur;
+  inp.style.minWidth = Math.max(cur.length, 4) + 'ch';
+  el.innerHTML = ''; el.appendChild(inp); inp.focus(); inp.select();
+  const finish = () => { renderHdrField(id, inp.value.trim() || HDR_DEFAULTS[id]); saveHeader(); };
+  inp.addEventListener('blur', finish);
+  inp.addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();inp.blur();} if(e.key==='Escape') renderHdrField(id, cur); });
+}
+
+// ═══════════════════════════════════════════
+// CATEGORIES
+// ═══════════════════════════════════════════
+function catLabel(id) { return (categories.find(c=>c.id===id) || {label:id}).label; }
+
+function renderCatBar() {
+  const bar = document.getElementById('catBar');
+  const btns = [`<button class="cat-btn ${currentFilter==='alle'?'active':''}" onclick="filterCat('alle',this)">Alle</button>`];
+  categories.forEach(c => btns.push(`<button class="cat-btn ${currentFilter===c.id?'active':''}" onclick="filterCat('${c.id}',this)">${c.label}</button>`));
+  btns.push(`<button class="cat-btn achieved-tab ${currentFilter==='opnaet'?'active':''}" onclick="filterCat('opnaet',this)">✦ Opnået</button>`);
+  btns.push(`<button class="manage-cats-btn" onclick="openCatManager()">⚙ Kategorier</button>`);
+  bar.innerHTML = btns.join('');
+}
+function populateCatSelect() {
+  document.getElementById('cardCat').innerHTML = categories.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+}
+
+// Category manager
+function openCatManager() {
+  catDraft = categories.map(c=>({...c}));
+  renderCatList();
+  document.getElementById('newCatInput').value = '';
+  document.getElementById('catWarn').style.display = 'none';
+  document.getElementById('catManagerModal').classList.add('open');
+}
+function closeCatManager() { document.getElementById('catManagerModal').classList.remove('open'); }
+function renderCatList() {
+  const list = document.getElementById('catList');
+  if (!catDraft.length) { list.innerHTML = `<div style="font-size:0.78rem;color:var(--muted);padding:0.5rem;text-align:center;">Ingen kategorier</div>`; return; }
+  list.innerHTML = catDraft.map((c,i) => `
+    <div class="cat-row">
+      <span style="color:#2a2a2a;padding:0 0.3rem;">⠿</span>
+      <input class="cat-row-input" value="${c.label}" oninput="catDraft[${i}].label=this.value">
+      <button class="cat-row-del" onclick="removeDraftCat(${i})">✕</button>
+    </div>`).join('');
+}
+function removeDraftCat(i) {
+  const count = cards.filter(c=>c.cat===catDraft[i].id).length;
+  if (count > 0 && !confirm(`${count} kort er tilknyttet denne kategori. Fortsæt?`)) return;
+  catDraft.splice(i,1); renderCatList();
+}
+function addCat() {
+  const inp = document.getElementById('newCatInput');
+  const lbl = inp.value.trim();
+  if (!lbl) { document.getElementById('catWarn').style.display='block'; return; }
+  document.getElementById('catWarn').style.display='none';
+  catDraft.push({id:'cat_'+Date.now(), label:lbl});
+  inp.value=''; renderCatList();
+}
+function saveCats() {
+  if (catDraft.some(c=>!c.label.trim())) { alert('Alle kategorier skal have et navn.'); return; }
+  categories = catDraft.map(c=>({id:c.id, label:c.label.trim()}));
+  if (currentFilter !== 'alle' && currentFilter !== 'opnaet' && !categories.find(c=>c.id===currentFilter)) currentFilter='alle';
+  save(); renderCatBar(); populateCatSelect(); render(); closeCatManager();
+}
+
+// ═══════════════════════════════════════════
+// CARD MODAL
+// ═══════════════════════════════════════════
+function openModal(editId) {
+  editingId = editId || null;
+  populateCatSelect();
+  document.getElementById('modalOverlay').classList.add('open');
+  if (editId) {
+    const c = cards.find(x=>x.id===editId);
+    document.getElementById('modalTitle').textContent='Rediger Kort';
+    document.getElementById('saveBtn').textContent='Gem ændringer';
+    const typeMap={'drøm':0,'citat':1,'mål':2};
+    const tBtns=document.querySelectorAll('#typeRow .tog');
+    tBtns.forEach(b=>b.classList.remove('active'));
+    tBtns[typeMap[c.type]||0].classList.add('active');
+    mType=c.type; syncTypeUI();
+    document.getElementById('cardCat').value=c.cat;
+    document.getElementById('cardTitle').value=c.title;
+    document.getElementById('cardDesc').value=c.desc||'';
+    const sizeMap={small:0,medium:1,large:2};
+    const sBtns=document.querySelectorAll('#sizeRow .tog');
+    sBtns.forEach(b=>b.classList.remove('active'));
+    sBtns[sizeMap[c.size||'medium']].classList.add('active');
+    mSize=c.size||'medium';
+    document.querySelectorAll('.adot').forEach(d=>{d.classList.remove('sel');if(d.dataset.accent===(c.accent||'gold'))d.classList.add('sel');});
+    mAccent=c.accent||'gold';
+    if(c.img){mImg=c.img;document.getElementById('imgPreview').src=c.img;document.getElementById('imgPreview').style.display='block';document.getElementById('imgPlaceholder').style.display='none';document.getElementById('removeImgBtn').style.display='inline-block';}
+  } else {
+    document.getElementById('modalTitle').textContent='Nyt Vision Kort';
+    document.getElementById('saveBtn').textContent='Tilføj til board';
+    resetModal();
+  }
+  setTimeout(()=>document.getElementById('cardTitle').focus(),80);
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');resetModal();}
+function resetModal(){
+  editingId=null; mImg=null; mType='drøm'; mSize='medium'; mAccent='gold';
+  document.getElementById('cardTitle').value='';
+  document.getElementById('cardDesc').value='';
+  document.getElementById('imgPreview').style.display='none';
+  document.getElementById('imgPlaceholder').style.display='block';
+  document.getElementById('imgInput').value='';
+  document.getElementById('removeImgBtn').style.display='none';
+  document.querySelectorAll('#typeRow .tog').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.querySelectorAll('#sizeRow .tog').forEach((b,i)=>b.classList.toggle('active',i===1));
+  document.querySelectorAll('.adot').forEach(d=>d.classList.toggle('sel',d.dataset.accent==='gold'));
+  syncTypeUI();
+}
+function setType(t,btn){mType=t;document.querySelectorAll('#typeRow .tog').forEach(b=>b.classList.remove('active'));btn.classList.add('active');syncTypeUI();}
+function syncTypeUI(){
+  const isMaal = mType==='mål';
+  document.getElementById('imgSection').style.display=mType==='citat'?'none':'block';
+  document.getElementById('stravaHint').style.display=isMaal?'block':'none';
+  document.getElementById('titleLabel').textContent=mType==='citat'?'Citat':isMaal?'Dit mål':'Titel / Drøm';
+  document.getElementById('descLabel').textContent=mType==='citat'?'Forfatter / Kilde':'Beskrivelse (valgfrit)';
+  document.getElementById('cardTitle').placeholder=mType==='citat'?'"Succes er ikke tilfældig…"':isMaal?'F.eks. Løb 21 km':'F.eks. Flytte til udlandet…';
+  document.getElementById('cardDesc').placeholder=mType==='citat'?'F.eks. Marcus Aurelius':'Beskriv din drøm eller dit mål…';
+}
+function setSize(s,btn){mSize=s;document.querySelectorAll('#sizeRow .tog').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function setAccent(dot){mAccent=dot.dataset.accent;document.querySelectorAll('.adot').forEach(d=>d.classList.remove('sel'));dot.classList.add('sel');}
+function previewImg(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{mImg=e.target.result;document.getElementById('imgPreview').src=mImg;document.getElementById('imgPreview').style.display='block';document.getElementById('imgPlaceholder').style.display='none';document.getElementById('removeImgBtn').style.display='inline-block';};
+  r.readAsDataURL(file);
+}
+function removeImg(){mImg=null;document.getElementById('imgPreview').src='';document.getElementById('imgPreview').style.display='none';document.getElementById('imgPlaceholder').style.display='block';document.getElementById('removeImgBtn').style.display='none';document.getElementById('imgInput').value='';}
+function saveCard(){
+  const title=document.getElementById('cardTitle').value.trim();
+  if(!title){document.getElementById('cardTitle').focus();return;}
+  const data={type:mType,cat:document.getElementById('cardCat').value,title,desc:document.getElementById('cardDesc').value.trim(),img:mImg,size:mSize,accent:mAccent,checked:false,achievedDate:null,stravaAuto:false};
+  if(editingId){
+    const idx=cards.findIndex(c=>c.id===editingId);
+    if(idx!==-1){data.id=editingId;data.checked=cards[idx].checked;data.achievedDate=cards[idx].achievedDate;data.stravaAuto=cards[idx].stravaAuto;cards[idx]=data;}
+  } else {data.id=Date.now();cards.push(data);}
+  save();render();closeModal();
+}
+
+// ═══════════════════════════════════════════
+// CARD ACTIONS
+// ═══════════════════════════════════════════
+function deleteCard(id){if(!confirm('Slet dette kort?'))return;cards=cards.filter(c=>c.id!==id);save();render();}
+function moveCard(id,dir){
+  const idx=cards.findIndex(c=>c.id===id);const sw=idx+dir;
+  if(sw<0||sw>=cards.length)return;
+  [cards[idx],cards[sw]]=[cards[sw],cards[idx]];save();render();
+}
+function toggleCheck(id){
+  const c=cards.find(c=>c.id===id);if(!c)return;
+  c.checked=!c.checked;
+  c.achievedDate=c.checked?new Date().toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'}):null;
+  if(!c.checked)c.stravaAuto=false;
+  save();render();
+}
+
+// ═══════════════════════════════════════════
+// FILTER / RENDER
+// ═══════════════════════════════════════════
+function filterCat(cat,btn){
+  currentFilter=cat;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  // Show Strava bar only under Sundhed & Fitness (find the cat id that has 'sundhed' label)
+  const sundhedCat = categories.find(c => c.id === 'sundhed' || c.label.toLowerCase().includes('sundhed') || c.label.toLowerCase().includes('fitness'));
+  const showStrava = sundhedCat && cat === sundhedCat.id;
+  document.getElementById('stravaBar').style.display = showStrava ? 'flex' : 'none';
+  render();
+}
+
+function render(){
+  const container=document.getElementById('boardContainer');
+  if(currentFilter==='opnaet'){renderAchieved(container);updateStats();return;}
+  if(currentFilter==='alle'){renderAll(container);updateStats();return;}
+  const active=cards.filter(c=>c.cat===currentFilter&&!c.checked);
+  if(!active.length){
+    container.innerHTML=`<div class="empty-wrap"><div class="empty-board"><h3>Ingen kort her endnu</h3><p>Tryk "+ Tilføj kort" for at starte</p></div></div>`;
+    updateStats();return;
+  }
+  container.innerHTML=`<div class="board-grid">${active.map((c,i)=>cardHTML(c,i,false)).join('')}</div>`;
+  updateStats();
+}
+
+function renderAll(container){
+  const active=cards.filter(c=>!c.checked);
+  if(!active.length){
+    container.innerHTML=`<div class="empty-wrap"><div class="empty-board"><h3>Ingen kort endnu</h3><p>Tryk "+ Tilføj kort" for at starte din rejse</p></div></div>`;
+    return;
+  }
+  const cols=categories.map(cat=>{
+    const cc=active.filter(c=>c.cat===cat.id);
+    return `<div class="board-col">
+      <div class="board-col-header">
+        <div class="board-col-title">${cat.label}</div>
+        <div class="board-col-count">${cc.length} kort</div>
+      </div>
+      ${cc.length ? cc.map((c,i)=>cardHTML(c,i,false)).join('') : '<div class="board-col-empty">Ingen kort</div>'}
+    </div>`;
+  }).join('');
+  container.innerHTML=`<div class="board-all"><div class="board-all-inner">${cols}</div></div>`;
+}
+
+function cardHTML(c, i, achieved){
+  const delay=(i%10)*0.04;
+  const ac=c.accent&&c.accent!=='none'?`accent-${c.accent}`:'';
+  const sc=`card-size-${c.size||'medium'}`;
+  const lbl=catLabel(c.cat);
+
+  const actions = achieved
+    ? `<div class="card-actions">
+        <button class="cta" style="font-size:0.55rem;width:auto;padding:0 6px;letter-spacing:0" onclick="toggleCheck(${c.id})" title="Fortryd">↩</button>
+        <button class="cta del" onclick="deleteCard(${c.id})">✕</button>
+       </div>`
+    : `<div class="card-actions">
+        <button class="cta edit" onclick="openModal(${c.id})" title="Rediger">✎</button>
+        <button class="cta" onclick="moveCard(${c.id},-1)" style="font-size:0.65rem">↑</button>
+        <button class="cta" onclick="moveCard(${c.id},1)"  style="font-size:0.65rem">↓</button>
+        <button class="cta del" onclick="deleteCard(${c.id})">✕</button>
+       </div>`;
+
+  const stamp    = achieved ? `<div class="achieved-stamp">✦ Opnået</div>` : '';
+  const dateHTML = achieved && c.achievedDate ? `<div class="achieved-date">Opnået d. ${c.achievedDate}</div>` : '';
+
+  // Quote
+  if(c.type==='citat') return `<div class="card quote-card ${ac} ${sc}" style="animation-delay:${delay}s">${actions}${stamp}<div class="card-body"><div class="quote-mark">"</div><div class="card-title">${c.title}</div>${c.desc?`<div class="quote-author">— ${c.desc}</div>`:''}</div></div>`;
+
+  // Goal
+  if(c.type==='mål'){
+    const num=String(cards.filter(x=>x.type==='mål').indexOf(c)+1).padStart(2,'0');
+    const stravaBadge=c.stravaAuto?`<span class="strava-auto-badge">Strava</span>`:'';
+
+    // Progress bar
+    const prog = !achieved ? getProgress(c, stravaTotals) : null;
+    const progHTML = prog ? `
+      <div class="strava-progress-wrap">
+        <div class="strava-progress-top">
+          <span class="strava-progress-lbl">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="#fc4c02"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+            Strava
+          </span>
+          <span class="strava-progress-val">${prog.current} / ${prog.target} ${prog.unit} (${prog.pct}%)</span>
+        </div>
+        <div class="strava-bar-track"><div class="strava-bar-fill" style="width:${prog.pct}%"></div></div>
+      </div>` : '';
+
+    const checkRow = achieved ? '' : `<div class="goal-check"><input type="checkbox" class="goal-checkbox" ${c.checked?'checked':''} onchange="toggleCheck(${c.id})"><span class="goal-label" onclick="toggleCheck(${c.id})">${c.checked?'Opnået ✦':'Marker som opnået'}</span></div>`;
+    return `<div class="card goal-card ${ac} ${sc}" style="animation-delay:${delay}s">${actions}${stamp}<div class="card-body"><div class="goal-number">${num}</div><div class="card-category">${lbl}${stravaBadge}</div><div class="card-title">${c.title}</div>${c.desc?`<div class="card-desc">${c.desc}</div>`:''}${dateHTML}${progHTML}${checkRow}</div></div>`;
+  }
+
+  // Dream
+  const img=c.img?`<img src="${c.img}" class="card-image" alt="${c.title}">`:`<div class="card-image-placeholder"><div class="plus-icon">✦</div><span>${lbl}</span></div>`;
+  return `<div class="card ${ac} ${sc}" style="animation-delay:${delay}s">${actions}${stamp}${img}<div class="card-body"><div class="card-category">${lbl}</div><div class="card-title">${c.title}</div>${c.desc?`<div class="card-desc">${c.desc}</div>`:''}${dateHTML}</div></div>`;
+}
+
+function renderAchieved(container){
+  const list=cards.filter(c=>c.checked);
+  if(!list.length){
+    container.innerHTML=`<div class="achieved-page"><div class="achieved-header"><h2>✦ Opnåede Mål</h2><p>Her samles dine sejre</p></div><div class="empty-board" style="border:1px dashed #2a3a2a"><h3 style="color:#3a6a4a;opacity:1">Ingen opnåede mål endnu</h3><p>Marker et mål som opnået — det dukker op her</p></div></div>`;
+    return;
+  }
+  container.innerHTML=`<div class="achieved-page"><div class="achieved-header"><h2>✦ Opnåede Mål</h2><p>${list.length} mål nået — godt klaret!</p></div><div class="achieved-grid">${list.map((c,i)=>cardHTML(c,i,true)).join('')}</div></div>`;
+}
+
+function updateStats(){
+  document.getElementById('totalCount').textContent=cards.length;
+  document.getElementById('goalCount').textContent=cards.filter(c=>c.type==='mål').length;
+  document.getElementById('checkedCount').textContent=cards.filter(c=>c.checked).length;
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('catManagerModal').addEventListener('click',function(e){if(e.target===this)closeCatManager();});
+
+// Pre-seed the fresh token so it works immediately from file://
+try {
+  localStorage.setItem('vb_strava_token', JSON.stringify({
+    access_token:  'ef194bead0fe5fb3ec4fa2acaf8b514d3cd51c7a',
+    expires_at:    1775626534,
+    refresh_token: '7facdc7f86b4383f82a8c565907cb751d2121d4b'
+  }));
+} catch(e){}
+
+loadHeader();
+load();
+if (!categories.length) categories=[...DEFAULT_CATS];
+if (!cards.length) {
+  cards=[
+    {id:1,type:'citat', cat:'vaekst',   title:'Den bedste investering du kan gøre er i dig selv.',desc:'Warren Buffett',img:null,size:'medium',accent:'gold', checked:false,achievedDate:null,stravaAuto:false},
+    {id:2,type:'drøm',  cat:'rejser',   title:'Japan — Tokyo & Kyoto',desc:'Oplev kirsebærblomsterne i foråret.',img:null,size:'large',accent:'blue',  checked:false,achievedDate:null,stravaAuto:false},
+    {id:3,type:'mål',   cat:'oekonomi', title:'Byg en passiv indkomst',desc:'Investeringer der arbejder mens jeg sover.',img:null,size:'medium',accent:'gold', checked:false,achievedDate:null,stravaAuto:false},
+    {id:4,type:'drøm',  cat:'karriere', title:'Start mit eget projekt',desc:'Byg noget der er 100% mit eget.',img:null,size:'medium',accent:'red',   checked:false,achievedDate:null,stravaAuto:false},
+    {id:5,type:'citat', cat:'sundhed',  title:'Disciplin er at vælge det du vil have mest, over det du vil have nu.',desc:'Ukendt',img:null,size:'small',accent:'none', checked:false,achievedDate:null,stravaAuto:false},
+    {id:6,type:'mål',   cat:'sundhed',  title:'Løb 21 km',desc:'Registreret via Strava — løb samlet 21 km.',img:null,size:'medium',accent:'green',checked:false,achievedDate:null,stravaAuto:false},
+  ];
+}
+renderCatBar();
+render();
+loadStravaCache();
+</script>
+</body>
+</html>
