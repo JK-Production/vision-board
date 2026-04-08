@@ -444,7 +444,7 @@ async function stravaSync() {
       if (inWeek) { week.elevation += elev; week.time_sec += t; }
     }
 
-    stravaTotals = { allTime, week, athlete };
+    stravaTotals = { allTime, week, athlete, activities };
     try { localStorage.setItem('vb_strava_data', JSON.stringify({stravaTotals, syncedAt: Date.now()})); } catch(e){}
 
     renderStravaBar(athlete, week);
@@ -511,29 +511,46 @@ function getProgress(card, totals) {
   const target = parseGoalTarget(card.title + ' ' + (card.desc||''));
   if (!target) return null;
 
-  // Use allTime totals for goal completion, week for display
+  const activities = totals.activities || [];
   const at = totals.allTime;
   let current = 0;
-  switch(target.type) {
-    case 'run_km':    current = Math.round(at.run_km  * 10)/10; break;
-    case 'ride_km':   current = Math.round(at.ride_km * 10)/10; break;
-    case 'any_km':    current = Math.round((at.run_km + at.ride_km) * 10)/10; break;
-    case 'elevation': current = Math.round(at.elevation); break;
-    case 'count':     current = at.run_count + at.ride_count; break;
-    case 'time_h':    current = Math.round(at.time_sec/3600 * 10)/10; break;
-    default: return null;
+
+  if (target.type === 'count') {
+    // Count goals are cumulative
+    current = at.run_count + at.ride_count;
+  } else {
+    // All other goals: find the BEST single activity
+    for (const a of activities) {
+      const isRun  = a.sport_type === 'Run'  || a.type === 'Run';
+      const isRide = a.sport_type === 'Ride' || a.type === 'Ride';
+      const km     = (a.distance || 0) / 1000;
+      const elev   = a.total_elevation_gain || 0;
+      const h      = (a.moving_time || 0) / 3600;
+      let val = 0;
+
+      switch(target.type) {
+        case 'run_km':    if (!isRun)  continue; val = Math.round(km * 10)/10;   break;
+        case 'ride_km':   if (!isRide) continue; val = Math.round(km * 10)/10;   break;
+        case 'any_km':    val = Math.round(km * 10)/10;   break;
+        case 'elevation': val = Math.round(elev); break;
+        case 'time_h':    val = Math.round(h * 10)/10;    break;
+        default: continue;
+      }
+      if (val > current) current = val;
+    }
   }
+
   const pct = Math.min(100, Math.round((current / target.value) * 100));
-  return {current, target: target.value, unit: target.unit, pct};
+  return {current, target: target.value, unit: target.unit, pct, isBest: target.type !== 'count'};
 }
 
 function checkStravaGoals(allTime, week) {
-  const combined = {allTime, week};
+  const combined = {allTime, week, activities: stravaTotals?.activities || []};
   let anyNew = false;
   cards.forEach(c => {
     if (c.checked || c.type !== 'mål') return;
-    const p = getProgress(c, combined);
-    if (p && p.pct >= 100) {
+    const achieved = checkSingleActivityGoal(c, combined.activities);
+    if (achieved) {
       c.checked      = true;
       c.achievedDate = new Date().toLocaleDateString('da-DK',{day:'numeric',month:'long',year:'numeric'});
       c.stravaAuto   = true;
@@ -541,6 +558,34 @@ function checkStravaGoals(allTime, week) {
     }
   });
   if (anyNew) { save(); showNotif('✦ Strava mål opnået! Tjek din Opnået-side.'); }
+}
+
+// Check if a SINGLE activity matches the goal (not cumulative)
+function checkSingleActivityGoal(card, activities) {
+  if (!activities || !activities.length) return false;
+  const target = parseGoalTarget(card.title + ' ' + (card.desc||''));
+  if (!target) return false;
+
+  for (const a of activities) {
+    const isRun  = a.sport_type === 'Run'  || a.type === 'Run';
+    const isRide = a.sport_type === 'Ride' || a.type === 'Ride';
+    const km     = (a.distance || 0) / 1000;
+    const elev   = a.total_elevation_gain || 0;
+    const h      = (a.moving_time || 0) / 3600;
+    let val = 0;
+
+    switch(target.type) {
+      case 'run_km':   if (!isRun)  continue; val = km;   break;
+      case 'ride_km':  if (!isRide) continue; val = km;   break;
+      case 'any_km':   val = km;   break;
+      case 'elevation': val = elev; break;
+      case 'time_h':   val = h;    break;
+      case 'count':    return false; // count goals still use cumulative
+      default: continue;
+    }
+    if (val >= target.value) return true;
+  }
+  return false;
 }
 
 function showNotif(msg) {
@@ -835,7 +880,7 @@ function cardHTML(c, i, achieved){
         <div class="strava-progress-top">
           <span class="strava-progress-lbl">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="#fc4c02"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-            Strava
+            ${prog.isBest ? 'Bedste tur' : 'Samlet'}
           </span>
           <span class="strava-progress-val">${prog.current} / ${prog.target} ${prog.unit} (${prog.pct}%)</span>
         </div>
